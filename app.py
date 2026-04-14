@@ -16,8 +16,7 @@ with open("parking_area_coordinates.txt") as f:
         parking_lot_coords.append(list(map(int, coords)))
 
 # -------------------- STORAGE --------------------
-reserved_slots = {}   # {slot_id: {"name": "", "vehicle": ""}}
-PRICE_PER_SLOT = 50
+reserved_slots = {}
 
 # -------------------- FRAME --------------------
 def generate_frames():
@@ -39,14 +38,14 @@ def generate_frames():
             occupied = pixels > 500
 
             if idx in reserved_slots:
-                color = (0,165,255)   # reserved
+                color = (0,165,255)
             elif occupied:
-                color = (0,0,255)     # occupied
+                color = (0,0,255)
             else:
-                color = (0,255,0)     # free
+                color = (0,255,0)
 
             cv2.rectangle(frame, (x1,y1), (x2,y2), color, 2)
-            cv2.putText(frame, f"{idx}", (x1, y1-5),
+            cv2.putText(frame, str(idx), (x1, y1-5),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1)
 
         ret, buffer = cv2.imencode('.jpg', frame)
@@ -55,15 +54,22 @@ def generate_frames():
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-# -------------------- ROUTES --------------------
+# -------------------- HOME --------------------
 @app.route('/')
 def index():
     return """
-    <h1>🚗 Smart Parking</h1>
-    <a href="/reserve_page">Go to Reservation</a><br><br>
-    <img src="/video" width="900">
+    <html>
+        <body style="text-align:center; background:#0f172a; color:white;">
+            <h1>🚗 Smart Parking System</h1>
+
+            <a href="/reserve_page" style="color:cyan;">Go to Reservation</a><br><br>
+
+            <img src="/video" width="900" style="border-radius:10px;">
+        </body>
+    </html>
     """
 
+# -------------------- VIDEO --------------------
 @app.route('/video')
 def video():
     return Response(generate_frames(),
@@ -97,7 +103,6 @@ def reserve():
     data = request.json
     slot = data['slot']
 
-    # check occupied
     success, frame = camera.read()
     if success:
         x1, y1, x2, y2 = parking_lot_coords[slot]
@@ -131,7 +136,7 @@ def cancel(slot):
 def reserve_page():
     return render_template("reserve.html",
                            total=len(parking_lot_coords),
-                           price=PRICE_PER_SLOT)
+                           price=50)
 
 # -------------------- RUN --------------------
 if __name__ == "__main__":
